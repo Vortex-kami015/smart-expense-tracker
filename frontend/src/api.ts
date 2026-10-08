@@ -1,7 +1,8 @@
 import type { Expense, ExpenseInput, Prediction, Summary } from "./types";
+const BASE = import.meta.env.VITE_API_URL ?? "";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
+  const res = await fetch(BASE +url, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
@@ -27,3 +28,4 @@ export const api = {
   categorize: (description: string) =>
     request<Prediction>("/api/categorize", { method: "POST", body: JSON.stringify({ description }) }),
 };
+      
