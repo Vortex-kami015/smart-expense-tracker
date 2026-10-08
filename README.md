@@ -1,3 +1,4 @@
+https://smart-expense-tracker-tau-seven.vercel.app
 # Smart Expense Tracker with Auto-Categorization
 
 Flask + SQLite backend with a hybrid auto-categorizer (keyword rules, then a TF-IDF + Logistic Regression model),
