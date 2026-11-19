@@ -4,6 +4,7 @@ import { inr } from "./Dashboard";
 import type { Budget, RecurringExpense } from "./types";
 
 interface Props {
+  view: "overview" | "targets" | "recurring" | "categories";
   categories: string[];
   onCategoriesChanged: (categories: string[]) => void;
   onNotice: (message: string) => void;
@@ -15,7 +16,7 @@ const today = () => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 };
 
-export default function ManagementPanels({ categories, onCategoriesChanged, onNotice, onExpenseCreated }: Props) {
+export default function ManagementPanels({ view, categories, onCategoriesChanged, onNotice, onExpenseCreated }: Props) {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [recurring, setRecurring] = useState<RecurringExpense[]>([]);
   const [target, setTarget] = useState("");
@@ -34,10 +35,15 @@ export default function ManagementPanels({ categories, onCategoriesChanged, onNo
   const refreshRecurring = useCallback(async () => setRecurring(await api.recurring()), []);
 
   useEffect(() => {
-    Promise.all([refreshBudgets(), refreshRecurring()]).catch((err: unknown) => {
+    const refresh = view === "targets"
+      ? refreshBudgets()
+      : view === "recurring"
+        ? refreshRecurring()
+        : Promise.resolve();
+    refresh.catch((err: unknown) => {
       setError(err instanceof Error ? err.message : "Could not load budgets and reminders.");
     });
-  }, [refreshBudgets, refreshRecurring]);
+  }, [view, refreshBudgets, refreshRecurring]);
 
   async function submitBudget(event: React.FormEvent) {
     event.preventDefault();
@@ -130,7 +136,8 @@ export default function ManagementPanels({ categories, onCategoriesChanged, onNo
     try {
       await api.renameCategory(name, value.trim());
       onCategoriesChanged(await api.categories());
-      await Promise.all([refreshBudgets(), refreshRecurring()]);
+      if (view === "targets") await refreshBudgets();
+      if (view === "recurring") await refreshRecurring();
       onNotice("Category renamed.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not rename category.");
@@ -156,6 +163,7 @@ export default function ManagementPanels({ categories, onCategoriesChanged, onNo
 
   return (
     <section className="card management">
+      {view === "targets" && <>
       <h2>Spending targets</h2>
       <p className="muted">Set weekly or monthly limits. Alerts appear when you reach 80% or exceed a target.</p>
       <form className="management-form" onSubmit={submitBudget}>
@@ -200,7 +208,9 @@ export default function ManagementPanels({ categories, onCategoriesChanged, onNo
           ))}
         </div>
       )}
+      </>}
 
+      {view === "recurring" && <>
       <h2 className="panel-heading">Recurring reminders</h2>
       <p className="muted">Confirm a reminder when it is due to add the expense to your tracker.</p>
       <form className="management-form recurring-form" onSubmit={submitRecurring}>
@@ -248,7 +258,9 @@ export default function ManagementPanels({ categories, onCategoriesChanged, onNo
           ))}
         </div>
       )}
+      </>}
 
+      {view === "categories" && <>
       <h2 className="panel-heading">Manage custom categories</h2>
       <form className="management-form category-form" onSubmit={addCategory}>
         <label>
@@ -270,6 +282,7 @@ export default function ManagementPanels({ categories, onCategoriesChanged, onNo
           ))}
         </ul>
       )}
+      </>}
       {error && <p className="error banner" role="alert">{error}</p>}
     </section>
   );

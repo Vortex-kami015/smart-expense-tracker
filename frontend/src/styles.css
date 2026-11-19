@@ -151,6 +151,35 @@ th { color: var(--muted); font-weight: 500; }
 }
 .tracker-page .topbar > div:first-child > .muted { margin: 6px 0 0; }
 .tracker-page .avatar { border-color: #9e6239; background: #4a2d1d; }
+.page-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid #35251b;
+}
+.tracker-page button.page-tab {
+  padding: 10px 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #b7a99c;
+}
+.tracker-page button.page-tab:hover:not(:disabled) { color: #f5eee6; }
+.tracker-page button.page-tab.active {
+  border-bottom-color: #f18a3d;
+  color: #f6a66f;
+}
+.expense-page {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.expense-page .form { padding: clamp(20px, 4vw, 36px); }
+.expense-page .form h2 { font-size: 1.35rem; }
+.targets-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
 .tracker-page .grid {
   grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.65fr);
   gap: 20px;

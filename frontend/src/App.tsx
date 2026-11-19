@@ -9,6 +9,7 @@ import type { Expense, Summary } from "./types";
 const PAGE_SIZE = 10;
 
 function Tracker({ username, onLogout }: { username: string; onLogout: () => void }) {
+  const [activePage, setActivePage] = useState<"overview" | "add-expense" | "targets" | "recurring">("overview");
   const [categories, setCategories] = useState<string[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -111,21 +112,62 @@ function Tracker({ username, onLogout }: { username: string; onLogout: () => voi
       {error && <p className="error banner">{error}</p>}
       {notice && <p className="notice banner" role="status" aria-live="polite">{notice}</p>}
 
-      <Dashboard summary={summary} />
+      <nav className="page-tabs" aria-label="Tracker pages">
+        <button
+          type="button"
+          className={`page-tab${activePage === "overview" ? " active" : ""}`}
+          aria-current={activePage === "overview" ? "page" : undefined}
+          onClick={() => setActivePage("overview")}
+        >
+          Overview
+        </button>
+        <button
+          type="button"
+          className={`page-tab${activePage === "add-expense" ? " active" : ""}`}
+          aria-current={activePage === "add-expense" ? "page" : undefined}
+          onClick={() => {
+            setEditing(null);
+            setActivePage("add-expense");
+          }}
+        >
+          Add expense
+        </button>
+        <button
+          type="button"
+          className={`page-tab${activePage === "targets" ? " active" : ""}`}
+          aria-current={activePage === "targets" ? "page" : undefined}
+          onClick={() => setActivePage("targets")}
+        >
+          Spending targets
+        </button>
+        <button
+          type="button"
+          className={`page-tab${activePage === "recurring" ? " active" : ""}`}
+          aria-current={activePage === "recurring" ? "page" : undefined}
+          onClick={() => setActivePage("recurring")}
+        >
+          Recurring reminders
+        </button>
+      </nav>
 
-      <div className="grid">
-        <div>
+      {activePage === "add-expense" ? (
+        <main className="expense-page">
           <ExpenseForm
             categories={categories}
             editing={editing}
-            onCancel={() => setEditing(null)}
+            onCancel={() => {
+              setEditing(null);
+              setActivePage("overview");
+            }}
             onSaved={() => {
               setEditing(null);
               load();
               notify(editing ? "Expense updated." : "Expense added.");
+              setActivePage("overview");
             }}
           />
           <ManagementPanels
+            view="categories"
             categories={categories}
             onCategoriesChanged={(next) => {
               setCategories(next);
@@ -134,99 +176,131 @@ function Tracker({ username, onLogout }: { username: string; onLogout: () => voi
             onNotice={notify}
             onExpenseCreated={load}
           />
-        </div>
-
-        <div className="card">
-          <div className="section-heading">
-            <h2>Expenses</h2>
-            <button className="secondary export-button" onClick={exportCsv} disabled={expenses.length === 0}>
-              Export CSV
-            </button>
-          </div>
-          <div className="row filters filter-row">
-            <input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
-            <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)}>
-              <option value="">All categories</option>
-              {categories.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <div className="row filters date-filters">
-            <label>
-              Month
-              <input type="month" value={month} onChange={(e) => {
-                setMonth(e.target.value);
-                if (e.target.value) { setFromDate(""); setToDate(""); }
-              }} />
-            </label>
-            <label>
-              From
-              <input type="date" value={fromDate} onChange={(e) => {
-                setFromDate(e.target.value);
-                if (e.target.value) setMonth("");
-              }} />
-            </label>
-            <label>
-              To
-              <input type="date" value={toDate} onChange={(e) => {
-                setToDate(e.target.value);
-                if (e.target.value) setMonth("");
-              }} />
-            </label>
-            {(month || fromDate || toDate) && (
-              <button className="link clear-filters" onClick={() => { setMonth(""); setFromDate(""); setToDate(""); }}>
-                Clear dates
+        </main>
+      ) : activePage === "targets" ? (
+        <main className="targets-page">
+          <ManagementPanels
+            view="targets"
+            categories={categories}
+            onCategoriesChanged={(next) => {
+              setCategories(next);
+              if (filterCat && !next.includes(filterCat)) setFilterCat("");
+            }}
+            onNotice={notify}
+            onExpenseCreated={load}
+          />
+        </main>
+      ) : activePage === "recurring" ? (
+        <main className="targets-page">
+          <ManagementPanels
+            view="recurring"
+            categories={categories}
+            onCategoriesChanged={(next) => {
+              setCategories(next);
+              if (filterCat && !next.includes(filterCat)) setFilterCat("");
+            }}
+            onNotice={notify}
+            onExpenseCreated={load}
+          />
+        </main>
+      ) : (
+        <main>
+          <Dashboard summary={summary} />
+          <div className="card expenses-card">
+            <div className="section-heading">
+              <h2>Expenses</h2>
+              <button className="secondary export-button" onClick={exportCsv} disabled={expenses.length === 0}>
+                Export CSV
               </button>
+            </div>
+            <div className="row filters filter-row">
+              <input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)}>
+                <option value="">All categories</option>
+                {categories.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div className="row filters date-filters">
+              <label>
+                Month
+                <input type="month" value={month} onChange={(e) => {
+                  setMonth(e.target.value);
+                  if (e.target.value) { setFromDate(""); setToDate(""); }
+                }} />
+              </label>
+              <label>
+                From
+                <input type="date" value={fromDate} onChange={(e) => {
+                  setFromDate(e.target.value);
+                  if (e.target.value) setMonth("");
+                }} />
+              </label>
+              <label>
+                To
+                <input type="date" value={toDate} onChange={(e) => {
+                  setToDate(e.target.value);
+                  if (e.target.value) setMonth("");
+                }} />
+              </label>
+              {(month || fromDate || toDate) && (
+                <button className="link clear-filters" onClick={() => { setMonth(""); setFromDate(""); setToDate(""); }}>
+                  Clear dates
+                </button>
+              )}
+            </div>
+
+            {expenses.length === 0 ? (
+              <p className="muted">No expenses found.</p>
+            ) : (
+              <>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th className="right">Amount</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleExpenses.map((e) => (
+                        <tr key={e.id}>
+                          <td>{e.date}</td>
+                          <td>{e.description}</td>
+                          <td>
+                            <span className="tag">{e.category}</span>
+                            {e.auto_categorized && <span className="auto" title="Categorized automatically"> ⚡</span>}
+                          </td>
+                          <td className="right">{inr(e.amount)}</td>
+                          <td className="actions">
+                            <button className="link" onClick={() => {
+                              setEditing(e);
+                              setActivePage("add-expense");
+                            }}>Edit</button>
+                            <button className="link danger" onClick={() => remove(e.id)}>Delete</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="pagination">
+                  <span className="muted">Showing {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, expenses.length)} of {expenses.length}</span>
+                  <div>
+                    <button className="secondary" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1}>Previous</button>
+                    <span className="page-number">Page {page} of {pageCount}</span>
+                    <button className="secondary" onClick={() => setPage((current) => Math.min(pageCount, current + 1))} disabled={page === pageCount}>Next</button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
-
-          {expenses.length === 0 ? (
-            <p className="muted">No expenses found.</p>
-          ) : (
-            <>
-            <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Category</th>
-                  <th className="right">Amount</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {visibleExpenses.map((e) => (
-                  <tr key={e.id}>
-                    <td>{e.date}</td>
-                    <td>{e.description}</td>
-                    <td>
-                      <span className="tag">{e.category}</span>
-                      {e.auto_categorized && <span className="auto" title="Categorized automatically"> ⚡</span>}
-                    </td>
-                    <td className="right">{inr(e.amount)}</td>
-                    <td className="actions">
-                      <button className="link" onClick={() => setEditing(e)}>Edit</button>
-                      <button className="link danger" onClick={() => remove(e.id)}>Delete</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
-            <div className="pagination">
-              <span className="muted">Showing {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, expenses.length)} of {expenses.length}</span>
-              <div>
-                <button className="secondary" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1}>Previous</button>
-                <span className="page-number">Page {page} of {pageCount}</span>
-                <button className="secondary" onClick={() => setPage((current) => Math.min(pageCount, current + 1))} disabled={page === pageCount}>Next</button>
-              </div>
-            </div>
-            </>
-          )}
-        </div>
-      </div>
+      </main>
+      )}
     </div>
   );
 }
