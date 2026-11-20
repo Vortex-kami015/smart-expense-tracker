@@ -3,13 +3,14 @@ import { api, clearToken, getToken } from "./api";
 import Dashboard, { inr } from "./Dashboard";
 import AuthPage from "./AuthPage";
 import ExpenseForm from "./ExpenseForm";
+import HomePage from "./HomePage";
 import ManagementPanels from "./ManagementPanels";
 import type { Expense, Summary } from "./types";
 
 const PAGE_SIZE = 10;
 
 function Tracker({ username, onLogout }: { username: string; onLogout: () => void }) {
-  const [activePage, setActivePage] = useState<"overview" | "add-expense" | "targets" | "recurring">("overview");
+  const [activePage, setActivePage] = useState<"home" | "overview" | "add-expense" | "targets" | "recurring">("home");
   const [categories, setCategories] = useState<string[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -115,6 +116,14 @@ function Tracker({ username, onLogout }: { username: string; onLogout: () => voi
       <nav className="page-tabs" aria-label="Tracker pages">
         <button
           type="button"
+          className={`page-tab${activePage === "home" ? " active" : ""}`}
+          aria-current={activePage === "home" ? "page" : undefined}
+          onClick={() => setActivePage("home")}
+        >
+          Home
+        </button>
+        <button
+          type="button"
           className={`page-tab${activePage === "overview" ? " active" : ""}`}
           aria-current={activePage === "overview" ? "page" : undefined}
           onClick={() => setActivePage("overview")}
@@ -150,7 +159,9 @@ function Tracker({ username, onLogout }: { username: string; onLogout: () => voi
         </button>
       </nav>
 
-      {activePage === "add-expense" ? (
+      {activePage === "home" ? (
+        <HomePage onNavigate={setActivePage} />
+      ) : activePage === "add-expense" ? (
         <main className="expense-page">
           <ExpenseForm
             categories={categories}
